@@ -8,7 +8,7 @@ on:
 
 jobs:
   cicd_test:
-    name: Check if the PR targets main from develop
+    name: check_if_the_pr_targets_main_from_develop
     runs-on: ubuntu-latest
     steps:
       - name: Check if the PR targets main from develop
