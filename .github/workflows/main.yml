@@ -8,10 +8,10 @@ on:
 
 jobs:
   cicd_test:
-    name: cicd_to_main
+    name: Check if the PR targets main from develop
     runs-on: ubuntu-latest
     steps:
-      - name: Check:if PR is from develop to main branch
+      - name: Check if the PR targets main from develop
         run: |
           if [ "${{ github.event.pull_request.base.ref }}" == "main" ] && [ "${{ github.event.pull_request.head.ref }}" != "develop" ]; then
             echo "Pull request not from develop to main branch"
