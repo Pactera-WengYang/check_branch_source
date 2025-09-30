@@ -7,15 +7,48 @@ on:
       - main
 
 jobs:
-  cicd_test:
-    name: Check if the PR targets main from develop
+  check-pr-source:
+    name: Check PR source branch is from develop
     runs-on: ubuntu-latest
     steps:
-      - name: Check if the PR targets main from develop
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if PR branch is from develop
         run: |
-          if [ "${{ github.event.pull_request.base.ref }}" == "main" ] && [ "${{ github.event.pull_request.head.ref }}" != "develop" ]; then
-            echo "Pull request not from develop to main branch"
-            exit 1
+          # 获取 PR 源分支和目标分支
+          SOURCE_BRANCH="${{ github.event.pull_request.head.ref }}"
+          TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
+
+          echo "Checking if PR from $SOURCE_BRANCH to $TARGET_BRANCH is valid"
+
+          # 只有目标分支是 main 时才需要检查
+          if [ "$TARGET_BRANCH" == "main" ]; then
+            # 检查源分支是否是从 develop 分支切出来的
+            # 使用 git merge-base 来找到两个分支的共同祖先
+            DEVELOP_MERGE_BASE=$(git merge-base "$SOURCE_BRANCH" origin/develop)
+
+            # 获取 develop 分支的最新提交
+            DEVELOP_LATEST=$(git rev-parse origin/develop)
+
+            echo "Source branch: $SOURCE_BRANCH"
+            echo "Target branch: $TARGET_BRANCH"
+            echo "Develop latest: $DEVELOP_LATEST"
+            echo "Merge base: $DEVELOP_MERGE_BASE"
+
+            # 检查源分支是否包含 develop 的最新提交
+            # 即源分支是否从 develop 分支的最新状态切出
+            if git merge-base --is-ancestor "$DEVELOP_LATEST" "$SOURCE_BRANCH" 2>/dev/null; then
+              echo "✅ PR branch $SOURCE_BRANCH is created from develop branch"
+            else
+              echo "❌ Error: PR branch $SOURCE_BRANCH is not created from develop branch"
+              echo "Please create your branch from the develop branch"
+              echo "Develop branch latest commit: $DEVELOP_LATEST"
+              echo "Your branch merge-base with develop: $DEVELOP_MERGE_BASE"
+              exit 1
+            fi
           else
-            echo "Pull request from develop to main branch"
+            echo "✅ PR target is not main branch, no source branch check required"
           fi
